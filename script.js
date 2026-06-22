@@ -145,16 +145,33 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Project video modal handler (reuse certificate modal)
+    // Project media modal handler (reuse certificate modal)
     projectLinks.forEach(link => {
         link.addEventListener('click', async (e) => {
             e.preventDefault();
             const href = link.getAttribute('href');
-            const title = link.closest('.project-info')?.querySelector('h3')?.textContent || 'Project Video';
+            const title = link.closest('.project-info')?.querySelector('h3')?.textContent || 'Project Media';
             const desc = link.closest('.project-info')?.querySelector('p')?.textContent || '';
-            // create video element
+
+            // If this is a Google Drive file viewer link, convert to preview iframe
+            const driveMatch = href && href.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+            if (driveMatch) {
+                const fileId = driveMatch[1];
+                const previewUrl = `https://drive.google.com/file/d/${fileId}/preview`;
+                const directUrl = `https://drive.google.com/file/d/${fileId}/view`;
+                const iframeHtml = `
+                    <div style="display:flex;flex-direction:column;gap:1rem">
+                      <iframe src="${previewUrl}" style="width:100%;height:70vh;border:0" onerror="this.style.display='none'" ></iframe>
+                      <div style="color:var(--text-muted);">If the preview fails to load, you can open the file directly in Google Drive.</div>
+                      <a href="${directUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-sm">Open in Drive</a>
+                    </div>`;
+                openCertModal(title, desc, iframeHtml);
+                return;
+            }
+
+            // Otherwise, attempt to show as an MP4 video (existing behavior)
             const videoHtml = `<video controls style="width:100%;height:auto;max-height:70vh">
-                <source src="${encodeURI(href)}" type="video/mp4/mov">
+                <source src="${encodeURI(href)}" type="video/mp4">
                 Your browser does not support the video tag.
             </video>`;
             openCertModal(title, desc, videoHtml);
